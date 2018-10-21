@@ -4,7 +4,7 @@
 #define HVret 0
 #define PwmPin0 6
 #define PwmPin2 3
-#define divisor 0x01 // 1/8分周
+#define divisor 0x01 // 1/1
 
 int _targetVoltage;
 int _permitDev;
@@ -19,22 +19,22 @@ int GetVoltage();
 
 void setup()
 {
-    pinMode(PwmPin2,OUTPUT);  
+    pinMode(PwmPin2,OUTPUT);  //Set D3 OUTPUT MODE
     
-    //SetPwmFrequency(PwmPin2,1); //SetPwn Frequency 31.250kHz
+    _targetVoltage = 690;   //Initialize Setting (178V +- 1V)
+    _permitDev = 10; 
 
-    _targetVoltage = 690; //set Voltage at start to 175V
-    _permitDev = 10; // set Voltage Deviation to 1V (Deviation +- 1V)
+    SetPwmFrequency();//Setting to 62KHz
 
-    SetPwmFrequency();
-    //SetPwmDuty(0.3);
     Serial.begin(9600);
 }
 
 void loop()
 {
     if(Serial.available()) _targetVoltage = Serial.readString().toInt();
+
     int retHV = GetVoltage();
+
     int tVoltageMin = _targetVoltage - _permitDev;
     int tVoltageMax = _targetVoltage + _permitDev;
     Serial.println(GetVoltage());
@@ -105,27 +105,25 @@ int GetVoltage()
 {
     
     int voltage = 0;
-    for(int cnt = 0; cnt <= 9;cnt ++)
+    int times = 5;
+    for(int cnt = 0; cnt < times;cnt++)
     {
-        int a = analogRead(A0);
-        voltage = voltage + a;
+        voltage = voltage + analogRead(A0);
         if(a < 0) Serial.println("000000000000000000000000");
         
     }
-    //Serial.println(analogRead(A0));
-    return voltage/10;
+    return voltage/times;
 }
 void SetPwmFrequency() //only Pin 3
 {
-    //_frequency = frequency;
     TCCR2A = 0b11101111;
-    TCCR2B = (TCCR2B & 0b11111000) | divisor; //1/8分周設定 => 16MHz / 8 = 2MHz
-    //OCR2A = (unsigned int)(2000000/frequency); //Frequency Setting
-    //OCR2B = (unsigned int)(128/*2000000/frequency * _duty*/);
+    TCCR2B = (TCCR2B & 0b11111000) | divisor;
+    return;
 }
 
 void SetPwmDuty(float duty)
 {
     _duty = duty;
     OCR2B = (unsigned int)(duty);
+    return;
 }
